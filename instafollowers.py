@@ -28,6 +28,7 @@ class GenContainer:
         for i in self.posts:
             print(f"Getting likes: {self.posts.index(i)}/{len(self.posts)} posts", end='\r')
             self.likes[i] = list(i.get_likes())
+        print(f"Getting likes: {len(self.posts)}/{len(self.posts)} posts")
         print("Done likes")
         self.unghosted_users = []
         self.ghoster_users = []
@@ -69,6 +70,7 @@ class GenContainer:
         df = pd.DataFrame([unghost_followers, ghost_followers, user_pt1, user_pt2])
         df = df.transpose()
         df.to_csv(self.username + ".csv", index=False, header=None)
+        print(f"CSV has been outputted to {self.username}.csv")
 
 
 def fupn(users: List[instaloader.Profile]) -> List[str]:
