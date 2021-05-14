@@ -17,5 +17,5 @@ while not logger():
     username = input("Type your username:\n")
     password = input("Type your password:\n")
 
-L.save_session_to_file("session")
+L.save_session_to_file(f"session-{username}")
 

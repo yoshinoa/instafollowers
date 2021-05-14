@@ -2,7 +2,8 @@ import instaloader
 from typing import List, Dict, Tuple
 import pandas as pd
 L = instaloader.Instaloader()
-L.load_session_from_file(input("input username: \n"), filename="session")
+local_username = input("input username: \n")
+L.load_session_from_file(local_username, filename=f"session-{local_username}")
 profile = instaloader.Profile.from_username(L.context, input("Give an account to analyze: \n"))
 
 
@@ -67,7 +68,7 @@ class GenContainer:
         user_pt2 = ["Likes"] + list(self.follower_likes.values())
         df = pd.DataFrame([unghost_followers, ghost_followers, user_pt1, user_pt2])
         df = df.transpose()
-        df.to_csv("output/" + self.username + ".csv", index=False, header=None)
+        df.to_csv(self.username + ".csv", index=False, header=None)
 
 
 def fupn(users: List[instaloader.Profile]) -> List[str]:
