@@ -3,11 +3,12 @@ from typing import List, Dict, Tuple
 import pandas as pd
 import os
 import json
+import shutil
 
 from instaloader import NodeIterator
 
 L = instaloader.Instaloader()
-local_username = input("input username: \n")
+local_username = input("Input username used in setup.py: \n")
 try:
     L.load_session_from_file(local_username, filename=f"session-{local_username}")
 except:
@@ -30,9 +31,28 @@ class GenContainer:
     unfollower_likes: Dict[str, int]
     sus: List[str]
     weishenmefollow: List[str]
+    loaded_from_file: bool
 
-    def __init__(self, user_profile: instaloader.Profile, from_file=False):
+    def __init__(self, user_profile: instaloader.Profile):
         self.username = user_profile.username
+        self.unghosted_users = []
+        self.ghoster_users = []
+        self.follower_likes = {}
+        self.unfollower_likes = {}
+        self.sus = []
+        self.weishenmefollow = []
+        if self.username in os.listdir():
+            check = input('Local copy of information available use that? y/n:\n')
+            if check in ['y', 'Y']:
+                print("Loading from file...")
+                self.load_from_file()
+                self.loaded_from_file = True
+                print("Load successful")
+                self.ghoster_init()
+                self.follower_likes_init()
+                self.why_following()
+                self.sus_check()
+                return
         print("Getting posts...")
         self.posts = list(user_profile.get_posts())
         print("Done posts")
@@ -53,12 +73,11 @@ class GenContainer:
             self.likes[i] = list(i.get_likes())
         print(f"Getting likes: {len(self.posts)}/{len(self.posts)} posts")
         print("Done likes")
-        self.unghosted_users = []
-        self.ghoster_users = []
-        self.follower_likes = {}
-        self.unfollower_likes = {}
-        self.sus = []
-        self.weishenmefollow = []
+        self.ghoster_init()
+        self.follower_likes_init()
+        self.why_following()
+        self.sus_check()
+        self.loaded_from_file = False
 
     def __str__(self) -> str:
         return f"{len(self.posts)} posts \n" \
@@ -67,29 +86,76 @@ class GenContainer:
                       f"Users that ghost: {fupn(self.ghoster_users)} \n" \
                       f"Ratio of likes Dict {self.follower_likes}"
 
-    def save_to_file(self):
-        print("Saving to file")
+    def load_function(self, context, folder):
+        temp_var = []
+        for item in os.listdir(folder):
+            temp_var.append(instaloader.load_structure_from_file(context, os.path.join(folder, item)))
+        return temp_var
+
+    def give_filenames(self, path):
+        dirname = os.path.join(path, self.username)
+        followers_folder = os.path.join(dirname, 'followers')
+        following_folder = os.path.join(dirname, 'following')
+        likes_folder = os.path.join(dirname, 'likes')
+        posts_folder = os.path.join(dirname, 'posts')
+        unghosted_users_folder = os.path.join(dirname, 'unghosted_users')
+        ghoster_users_folder = os.path.join(dirname, 'ghoster_users')
+        return dirname, followers_folder, following_folder, likes_folder, posts_folder, unghosted_users_folder, ghoster_users_folder
+
+    def load_from_file(self):
         dirname = os.path.dirname(os.path.abspath(__file__))
-        dirname = os.path.join(dirname, self.username)
-        if not os.path.exists(dirname):
+        dirname, followers_folder, following_folder, \
+            likes_folder, posts_folder, unghosted_users_folder, \
+            ghoster_users_folder = self.give_filenames(dirname)
+        self.followers = self.load_function(L.context, followers_folder)
+        self.following = self.load_function(L.context, following_folder)
+        self.posts = self.load_function(L.context, posts_folder)
+        self.unghosted_users = self.load_function(L.context, unghosted_users_folder)
+        self.ghoster_users = self.load_function(L.context, ghoster_users_folder)
+        self.likes = {}
+        for item in self.posts:
+            self.likes[item] = []
+            local_path = os.path.join(likes_folder, item.shortcode)
+            for item2 in os.listdir(local_path):
+                self.likes[item].append(instaloader.load_structure_from_file(L.context, os.path.join(local_path, item2)))
+
+
+
+    def save_to_file(self):
+        if self.loaded_from_file:
+            print("Saving to file")
+            dirname = os.path.dirname(os.path.abspath(__file__))
+            dirname, followers_folder, following_folder, \
+                likes_folder, posts_folder, unghosted_users_folder, \
+                ghoster_users_folder = self.give_filenames(dirname)
+            files_list = [followers_folder, following_folder, likes_folder, posts_folder, unghosted_users_folder, ghoster_users_folder]
+            if os.path.exists(dirname):
+                if os.path.exists(dirname + '_old'):
+                    print(f'{dirname}_old exists already, deleting and replacing.')
+                    shutil.rmtree(dirname + '_old')
+                os.rename(dirname, dirname + '_old')
             os.mkdir(dirname)
-        jsonable = {}
-        jsonable["username"] = self.username
-        jsonable["sus"] = self.sus
-        jsonable["weishenmefollow"] = self.weishenmefollow
-        jsonable["follower_likes"] = self.follower_likes
-        jsonable["unfollower_likes"] = self.unfollower_likes
-        likes: Dict[instaloader.Post, List[instaloader.Profile]]
-        posts: List[instaloader.Post]
-        generic_json = os.path.join(dirname, f'generic_json.json')
-        with open(generic_json, "w") as outfile:
-            json.dump(jsonable, outfile)
-        print("Saved to file.")
-        # self.posts.thaw(instaloader.load_structure_from_file(L.context, dirname + '/followers.json'))
-        # self.posts.thaw(instaloader.load_structure_from_file(L.context, dirname + '/followers.json'))
-        # self.posts.thaw(instaloader.load_structure_from_file(L.context, dirname + '/followers.json'))
-        # for item in self.posts:
-        #     instaloader.save_structure_to_file()
+            for item in files_list:
+                os.mkdir(item)
+            jsonable = {"username": self.username}
+            for item in self.followers:
+                instaloader.save_structure_to_file(item, os.path.join(followers_folder, str(self.followers.index(item)) + '.json'))
+            for item in self.following:
+                instaloader.save_structure_to_file(item, os.path.join(following_folder, str(self.following.index(item)) + '.json'))
+            for item in self.posts:
+                instaloader.save_structure_to_file(item, os.path.join(posts_folder, str(self.posts.index(item)) + '.json'))
+            for item in self.likes:
+                local_path = os.path.join(likes_folder, item.shortcode)
+                os.mkdir(local_path)
+                for another_item in self.likes[item]:
+                    instaloader.save_structure_to_file(another_item, os.path.join(local_path, str(self.likes[item].index(another_item)) + '.json'))
+            for item in self.unghosted_users:
+                instaloader.save_structure_to_file(item, os.path.join(unghosted_users_folder, str(self.unghosted_users.index(item)) + '.json'))
+            for item in self.ghoster_users:
+                instaloader.save_structure_to_file(item, os.path.join(ghoster_users_folder, str(self.ghoster_users.index(item)) + '.json'))
+            print("Saved to file.")
+        else:
+            print("Was originally loaded from file, cannot save this")
 
 
 
@@ -136,10 +202,9 @@ class GenContainer:
 
     def why_following(self) -> None:
         print("Why following done")
-        if not self.following:
-            for item in self.following:
-                if item not in self.followers:
-                    self.weishenmefollow.append(item.username)
+        for item in self.following:
+            if item not in self.followers:
+                self.weishenmefollow.append(item.username)
         print("Why following done")
 
     def write_to_excel(self):
@@ -167,10 +232,6 @@ def fupn(users: List[instaloader.Profile]) -> List[str]:
 
 def gen_container_FT(local_profile: instaloader.Profile) -> GenContainer:
     temp_var = GenContainer(local_profile)
-    temp_var.ghoster_init()
-    temp_var.follower_likes_init()
-    temp_var.why_following()
-    temp_var.sus_check()
     temp_var.save_to_file()
     temp_var.write_to_excel()
     return temp_var
