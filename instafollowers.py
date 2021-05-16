@@ -111,7 +111,7 @@ class GenContainer:
                       f"Users that ghost: {fupn(self.ghoster_users)} \n" \
                       f"Ratio of likes Dict {self.follower_likes}"
 
-    def give_filenames(self, path) -> tuple[str, str, str, str, str, str, str]:
+    def give_filenames(self, path):
         dirname = os.path.join(path, self.username)
         followers_folder = os.path.join(dirname, 'followers')
         following_folder = os.path.join(dirname, 'following')
