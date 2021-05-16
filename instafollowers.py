@@ -1,8 +1,7 @@
 import instaloader
-from typing import List, Dict, Tuple
+from typing import List, Dict
 import pandas as pd
 import os
-import json
 import shutil
 
 from instaloader import NodeIterator
@@ -177,17 +176,17 @@ class GenContainer:
         final_dict_unfollowers = {}
         print("follower likes started")
         for post in self.likes:
-            for user in self.likes[post]:
-                if user in self.followers:
-                    if user.username in final_dict_followers:
-                        final_dict_followers[user.username] += 1
+            for user2 in self.likes[post]:
+                if user2 in self.followers:
+                    if user2.username in final_dict_followers:
+                        final_dict_followers[user2.username] += 1
                     else:
-                        final_dict_followers[user.username] = 1
+                        final_dict_followers[user2.username] = 1
                 else:
-                    if user.username in final_dict_unfollowers:
-                        final_dict_unfollowers[user.username] += 1
+                    if user2.username in final_dict_unfollowers:
+                        final_dict_unfollowers[user2.username] += 1
                     else:
-                        final_dict_unfollowers[user.username] = 1
+                        final_dict_unfollowers[user2.username] = 1
         print("follower likes done")
         self.follower_likes = final_dict_followers
         self.unfollower_likes = final_dict_unfollowers
