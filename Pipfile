@@ -1,0 +1,8 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+instaloader="4.9.2"
+pandas="1.4.0"
