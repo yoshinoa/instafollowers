@@ -1,2 +1,0 @@
-instaloader==4.8.4
-pandas==1.4.0
