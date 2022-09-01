@@ -1,0 +1,8 @@
+excel/
+sessions/
+pickles/
+__pycache__/
+*.py[cod]
+.venv/
+.idea/
+.DS_Store

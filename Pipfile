@@ -6,3 +6,4 @@ name = "pypi"
 [packages]
 instaloader="4.9.2"
 pandas="1.4.0"
+openpyxl="*"
