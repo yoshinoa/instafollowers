@@ -1,8 +1,9 @@
 import instaloader
 import pickle
-from typing import List, Set, Optional
+from typing import List, Set, Optional, Dict
 import pandas as pd
 import os
+import datetime
 
 class ProfileContainer:
     username: str
@@ -11,10 +12,13 @@ class ProfileContainer:
     followers: Set[instaloader.Profile]
     following: Set[instaloader.Profile]
     likes: List[Set[instaloader.Profile]]
+    updated_at: datetime.datetime
+    maps_to: Dict[str, Set[instaloader.Profile]]
 
     def __init__(self, username: str, loader: instaloader.Instaloader, **kwargs) -> None:
         self.username = username
         self.profile = instaloader.Profile.from_username(loader.context, username)
+        self.updated_at = datetime.datetime.now()
 
     def get_posts(self) -> Optional[Set[instaloader.Post]]:
         print("Getting posts...")
@@ -36,10 +40,13 @@ class ProfileContainer:
             return None
         counter = 0
         self.likes = []
+        self.maps_to = {}
         for post in self.posts:
             print(f"Getting likes:"
                   f" {counter}/{len(self.posts)} posts", end='\r')
-            self.likes.append(set(post.get_likes()))
+            likes = post.get_likes()
+            self.likes.append(set(likes))
+            self.maps_to[post.shortcode] = set(likes)
             counter += 1
         return self.likes
 
@@ -47,7 +54,7 @@ class ProfileContainer:
         return [x.username for x in self.following if x in {i for sublist in self.likes for i in sublist}]
 
     def followers_that_didnt_like(self):
-        return [x.username for x in self.following if x not in {i for sublist in self.likes for i in sublist}]
+        return [x.username for x in self.followers if x not in {i for sublist in self.likes for i in sublist}]
 
     def follower_like_amounts(self):
         unnested_likes = [item for sublist in self.likes for item in sublist]
@@ -94,8 +101,28 @@ class ProfileContainer:
     def serialize(self) -> None:
         # Serialize the profile container to a pickle file.
         # Make a directory called "pickles" if it doesn't exist.
+        counter = 0
         if not os.path.exists("pickles"):
             os.mkdir("pickles")
-        with open(f"pickles/{self.username}.pickle", "wb") as f:
+        # check if the file exists and save the new one as an incremented version
+        if os.path.exists(f"pickles/{self.username}.pickle"):
+            counter = 1
+            while os.path.exists(f"pickles/{self.username}_{counter}.pickle"):
+                counter += 1
+        filename = f"pickles/{self.username + (f'_{counter}' if counter else '')}.pickle"
+        with open(filename, "wb") as f:
             pickle.dump(self, f)
+        print(f"{filename} written to disk")
+
+    def compare(self, other) -> None:
+        # Compare the current ProfileContainer with another ProfileContainer.
+        # Print the results.
+        print(f"Lost followers: {len(other.followers - self.followers)}")
+        print(f"Gained followers: {len(self.followers - other.followers)}")
+        print(f"Users that unfollowed: {[x.username for x in other.followers - self.followers]}")
+        print(f"Users that followed: {[x.username for x in self.followers - other.followers]}")
+        print(f"New users followed: {[x.username for x in self.following - other.following]}")
+        print(f"Users unfollowed: {[x.username for x in other.following - self.following]}")
+        # we want to find users that liked posts in the old profile but not in the new one
+        # we can do this by comparing the likes of the old profile with the followers of the new profile
 
