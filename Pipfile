@@ -4,6 +4,5 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-instaloader="4.9.2"
+instaloader="4.10"
 pandas="1.4.0"
-openpyxl="*"
