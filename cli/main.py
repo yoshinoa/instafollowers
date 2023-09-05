@@ -97,7 +97,7 @@ def main():
             return
     if args.compare and args.target:
         with open(
-            f'pickles/{args.target}{"_" + args.compare if args.compare != 0 else ""}.pickle',
+            f'pickles/{args.target}{"_" + args.compare if args.compare != "0" else ""}.pickle',
             "rb",
         ) as f:
             old = pickle.load(f)
@@ -116,7 +116,8 @@ def main():
             target.get_followers()
             target.get_following()
             target.get_likes()
-            target.serialize()
+            if not args.local:
+                target.serialize()
         target.compare(old)
 
     elif args.target:
