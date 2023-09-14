@@ -76,7 +76,9 @@ def main():
         action="store_true",
         dest="date",
     )
-    parser.add_argument("-n", "--omit")
+    parser.add_argument(
+        "--no-posts", help="Don't get posts", action="store_true", dest="no_posts"
+    )
     args = parser.parse_args()
     loader = instaloader.Instaloader()
     if args.date:
@@ -112,7 +114,7 @@ def main():
                 target = pickle.load(f)
         else:
             target = ProfileContainer(args.target, loader)
-            target.get_posts()
+            target.get_posts(skip=args.no_posts)
             target.get_followers()
             target.get_following()
             target.get_likes()
@@ -129,7 +131,7 @@ def main():
                 target = pickle.load(f)
         else:
             target = ProfileContainer(args.target, loader)
-            target.get_posts()
+            target.get_posts(skip=args.no_posts)
             target.get_followers()
             target.get_following()
             target.get_likes()

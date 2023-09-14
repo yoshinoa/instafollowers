@@ -23,9 +23,12 @@ class ProfileContainer:
         self.profile = instaloader.Profile.from_username(loader.context, username)
         self.updated_at = datetime.datetime.now()
 
-    def get_posts(self) -> Optional[Set[instaloader.Post]]:
+    def get_posts(self, skip=False) -> Optional[Set[instaloader.Post]]:
         print("Getting posts...")
-        self.posts = set(self.profile.get_posts())
+        if skip:
+            self.posts = set()
+        else:
+            self.posts = set(self.profile.get_posts())
         return self.posts
 
     def get_followers(self) -> Optional[Set[instaloader.Profile]]:
@@ -170,3 +173,23 @@ class ProfileContainer:
         print(
             f"Users unfollowed: {[x.username for x in other.following - self.following]}"
         )
+        # also output them into a file with the date timestamped
+        if not os.path.exists("logs"):
+            os.mkdir("logs")
+        with open(f"logs/{self.username}_{datetime.datetime.now()}.txt", "w") as f:
+            f.write(f"Lost followers: {len(other.followers - self.followers)}\n")
+            f.write(f"Gained followers: {len(self.followers - other.followers)}\n")
+            f.write(
+                f"Users that unfollowed: {[x.username for x in other.followers - self.followers]}\n"
+            )
+            f.write(
+                f"Users that followed: {[x.username for x in self.followers - other.followers]}\n"
+            )
+            f.write(
+                f"New users followed: {[x.username for x in self.following - other.following]}\n"
+            )
+            f.write(
+                f"Users unfollowed: {[x.username for x in other.following - self.following]}\n"
+            )
+            f.write(f"Date: {datetime.datetime.now()}\n")
+        print(f"Log file written to disk")

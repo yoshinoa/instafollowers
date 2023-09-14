@@ -39,7 +39,7 @@ def import_session(cookiefile, sessionfile):
         raise SystemExit("Not logged in. Are you logged in successfully in Firefox?")
     print("Imported session cookie for {}.".format(username))
     instaloader.context.username = username
-    instaloader.save_session_to_file(f"sessions/sessions-{username}")
+    instaloader.save_session_to_file(f"sessions/session-{username}")
 
 
 def export_get_session():
